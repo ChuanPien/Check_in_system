@@ -11,6 +11,7 @@ namespace login
         private string password;
         private string port;
         private string connectionString;
+        private string myDateString;
 
         public Form1()
         {
@@ -28,13 +29,13 @@ namespace login
         private void Form1_Load(object sender, EventArgs e)
         {
             timer1.Enabled = true;
+            label1.Text = myDateString;
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
             DateTime myDate = DateTime.Now;
             string myDateString = myDate.ToString("yyyy/MM/dd HH:mm:ss");
-            label1.Text = myDateString;
         }
 
         private void button1_Click(object sender, EventArgs e)
