@@ -15,13 +15,15 @@ namespace login
         public Form1()
         {
             InitializeComponent();
+
+            //資料庫基本設定
             server = "192.168.1.60";
             database = "login";
             user = "ChuanPien";
             password = "";
             port = "3306";
 
-            connectionString = String.Format("server={0};port={1};user id={2}; password={3}; database={4}", server, port, user, password, database);
+            connectionString = "server=" + server + ";port=" + port + ";user id=" + user + "; password=" + password + "; database=" + database + "";
             connection = new MySqlConnection(connectionString);
         }
 
@@ -44,45 +46,51 @@ namespace login
             string time = myDateString;
             string name = textBox1.Text;
             if (name == null)
-            {
                 MessageBox.Show("請輸入姓名!!");
-            }
             else
-            {
                 db(name, time);
-            }
         }
 
         private void db(string name, string time)
         {
-            string duty = "";
+            bool new_member = false;
+            string duty, updata;
             try
             {
-                connection.Open();
+                connection.Open();      //建立資料庫連線
+                //檢查員工狀態
                 string check = "SELECT * FROM member WHERE name = '" + name + "'";
                 MySqlCommand check_command = new MySqlCommand(check, connection);
                 using (MySqlDataReader isduty = check_command.ExecuteReader())
                 {
-                    while (isduty.Read())
-                    {
+                    if (isduty.Read())
                         duty = isduty["duty"].ToString();
+                    else
+                    {
+                        new_member = true;
+                        duty = "下班";
                     }
                 }
+
                 if (duty == "下班")
-                {
                     duty = "上班";
-                }
                 else
-                {
                     duty = "下班";
-                }
+
+                //更新員工狀態
+                if (new_member)
+                    updata = "INSERT INTO member (name, duty) VALUES ('" + name + "', '" + duty + "')";
+                else
+                    updata = "UPDATE member SET duty = '" + duty + "' WHERE name = '" + name + "'";
+                MySqlCommand updata_command = new MySqlCommand(updata, connection);
+                updata_command.ExecuteNonQuery();
+
+                //儲存打卡log
                 string ins = "INSERT INTO login_data (name, time, duty) VALUES ('" + name + "', '" + time + "', '" + duty + "')";
                 MySqlCommand ins_command = new MySqlCommand(ins, connection);
                 ins_command.ExecuteNonQuery();
-                string updata = "UPDATE member SET duty = '" + duty + "' WHERE name = '" + name + "'";
-                MySqlCommand updata_command = new MySqlCommand(updata, connection);
-                updata_command.ExecuteNonQuery();
-                connection.Close();
+
+                connection.Close();     //關閉連線
                 textBox2.Text = name + "打卡成功!\r\n狀態:" + duty + "\r\n時間:" + time;
             }
             catch (MySqlException)
