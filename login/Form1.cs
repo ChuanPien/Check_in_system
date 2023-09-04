@@ -11,7 +11,6 @@ namespace login
         private string password;
         private string port;
         private string connectionString;
-        private string myDateString;
 
         public Form1()
         {
@@ -29,38 +28,66 @@ namespace login
         private void Form1_Load(object sender, EventArgs e)
         {
             timer1.Enabled = true;
-            label1.Text = myDateString;
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
             DateTime myDate = DateTime.Now;
             string myDateString = myDate.ToString("yyyy/MM/dd HH:mm:ss");
+            label1.Text = myDateString;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             DateTime myDate = DateTime.Now;
             string myDateString = myDate.ToString("yyyy/MM/dd HH:mm:ss");
-            string name = textBox1.Text;
             string time = myDateString;
-            conexion(name, time);
+            string name = textBox1.Text;
+            if (name == null)
+            {
+                MessageBox.Show("請輸入姓名!!");
+            }
+            else
+            {
+                db(name, time);
+            }
         }
 
-        private void conexion(string name, string time)
+        private void db(string name, string time)
         {
+            string duty = "";
             try
             {
-                string com = "INSERT INTO login_data (name, time, type) VALUES ('" + name + "', '" + time + "', '上班')";
-                MySqlCommand command = new MySqlCommand(com, connection);
                 connection.Open();
-                command.ExecuteNonQuery();
+                string check = "SELECT * FROM member WHERE name = '" + name + "'";
+                MySqlCommand check_command = new MySqlCommand(check, connection);
+                using (MySqlDataReader isduty = check_command.ExecuteReader())
+                {
+                    while (isduty.Read())
+                    {
+                        duty = isduty["duty"].ToString();
+                    }
+                }
+                if (duty == "下班")
+                {
+                    duty = "上班";
+                }
+                else
+                {
+                    duty = "下班";
+                }
+                string ins = "INSERT INTO login_data (name, time, duty) VALUES ('" + name + "', '" + time + "', '" + duty + "')";
+                MySqlCommand ins_command = new MySqlCommand(ins, connection);
+                ins_command.ExecuteNonQuery();
+                string updata = "UPDATE member SET duty = '" + duty + "' WHERE name = '" + name + "'";
+                MySqlCommand updata_command = new MySqlCommand(updata, connection);
+                updata_command.ExecuteNonQuery();
                 connection.Close();
-                textBox2.Text = name + "打卡成功!\r\n時間:" + time;
+                textBox2.Text = name + "打卡成功!\r\n狀態:" + duty + "\r\n時間:" + time;
             }
-            catch (MySqlException ex)
+            catch (MySqlException)
             {
-                MessageBox.Show(ex.Message + connectionString);
+                textBox2.Text = "打卡失敗!";
             }
         }
     }
